@@ -174,3 +174,58 @@ least 50% of their events from the following list: 'video call received', 'video
  having count_inlist>=count(f.event_type)/2
  order by count_inlist desc)
  select client_id from base2 limit 1
+
+/*.6....Write a query to find the Market Share at the Product Brand level for each Territory,
+for Time Period Q4-2021. Market Share is the number of Products of a certain Product Brand 
+brand sold in a territory, divided by the total number of Products sold in this Territory.
+Output the ID of the Territory, name of the Product Brand and the corresponding Market 
+Share in percentages. Only include these Product Brands that had at least one sale in a given territory.*/
+
+drop table if exists fct_customer_sales;
+CREATE TABLE fct_customer_sales (cust_id VARCHAR(50), prod_sku_id VARCHAR(50), order_date DATETIME,
+ order_value BIGINT, order_id VARCHAR(50));
+ 
+drop table if exists map_customer_territory;
+CREATE TABLE map_customer_territory (cust_id VARCHAR(50), territory_id VARCHAR(50));
+
+drop table if exists dim_product;
+CREATE TABLE dim_product (prod_sku_id VARCHAR(50), prod_sku_name VARCHAR(255), prod_brand VARCHAR(100),
+ market_name VARCHAR(100));
+
+INSERT INTO fct_customer_sales (cust_id, prod_sku_id, order_date, order_value, order_id) VALUES 
+('C001', 'P001', '2021-10-15', 100, 'O1001'), ('C002', 'P002', '2021-11-20', 200, 'O1002'),
+ ('C003', 'P003', '2021-12-05', 150, 'O1003'), ('C001', 'P002', '2021-12-10', 300, 'O1004'),
+ ('C002', 'P001', '2021-11-18', 250, 'O1005');
+
+INSERT INTO map_customer_territory (cust_id, territory_id) VALUES ('C001', 'T001'),
+ ('C002', 'T002'), ('C003', 'T001');
+ 
+ INSERT INTO dim_product (prod_sku_id, prod_sku_name, prod_brand, market_name) VALUES 
+ ('P001', 'Product A', 'Brand X', 'Market 1'), ('P002', 'Product B', 'Brand Y', 'Market 2'),
+ ('P003', 'Product C', 'Brand X', 'Market 1');
+ 
+ with base as (select quarter(f.order_date) quartername,year(f.order_date) yearname ,count(d.prod_sku_id) as sales,
+ d.prod_brand, m.territory_id from map_customer_territory m join fct_customer_sales f 
+ on m.cust_id=f.cust_id join dim_product d on d.prod_sku_id=f.prod_sku_id
+ group by  d.prod_brand, m.territory_id,quarter(f.order_date),year(f.order_date) ),
+  base2 as (select  territory_id, sum(sales)as total from base where quartername=4 and yearname=2021
+ group by  territory_id)
+ select  b.territory_id,b.prod_brand,
+round((sum(sales)/total)*100,2) as share from base b join base2 b2 on b.territory_id=b2.territory_id
+where quartername=4 and yearname=2021
+ group by  b.territory_id, b.prod_brand
+ order by b.territory_id,b.prod_brand;
+ 
+ /* note for share of brand per territory is taken for the number of quanity of 
+ brand sold/ brand sold by entire territory is taken */
+ 
+ /* another way */
+ with base3 as (select quarter(f.order_date) quartername,year(f.order_date) yearname ,count(d.prod_sku_id) as sales,
+ d.prod_brand, m.territory_id from map_customer_territory m join fct_customer_sales f 
+ on m.cust_id=f.cust_id join dim_product d on d.prod_sku_id=f.prod_sku_id
+ group by  d.prod_brand, m.territory_id,quarter(f.order_date),year(f.order_date) )
+ select prod_brand, territory_id, round( sum(sales)/((sum(sales) over(partition by territory_id)))*100,2) as share
+ from base3 
+ group by  prod_brand, territory_id,quartername,yearname
+ 
+ 
