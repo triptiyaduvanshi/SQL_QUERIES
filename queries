@@ -1,6 +1,6 @@
 Use  maven_advanced_sql;
 show tables;
-/* A group of travelers embark on world tours starting with their home cities. Each traveler 
+/1...* A group of travelers embark on world tours starting with their home cities. Each traveler 
 has an undecided itinerary that evolves over the course of the tour. Some travelers decide to 
 abruptly end their journey mid-travel and live in their last destination.
 Given the dataset of dates on which they travelled between different pairs of cities, 
@@ -29,7 +29,7 @@ INSERT INTO travel_history (date, start_city, end_city, traveler) VALUES ('2024-
 
 
 
-/* Each Employee is assigned one territory and is responsible for the Customers from this territory. 
+/*2... Each Employee is assigned one territory and is responsible for the Customers from this territory. 
 There may be multiple employees assigned to the same territory.
 Write a query to get the Employees who are responsible for the maximum number of Customers.
  Output the Employee ID and the number of Customers*/
@@ -53,7 +53,7 @@ base2 as (select empl_id,(count(cust_id)) as count from base group by empl_id)
 select empl_id,count from base2 where count=( select max(count) from base2);
 
 
-/* Write a query to return Territory and corresponding Sales Growth.
+/*3... Write a query to return Territory and corresponding Sales Growth.
  Compare growth between periods Q4-2021 vs Q3-2021.
  If Territory (say T123) has Sales worth $100 in Q3-2021 and Sales worth $110 in Q4-2021,
  then the Sales Growth will be 10% [ i.e. = ((110 - 100)/100) * 100 ]*/
@@ -101,3 +101,47 @@ group by t.territory_id, year(c.order_date),
  from base q3 join base q4 on q3.territory_id=q4.territory_id
  where q3.nameyear=q4.nameyear and q3.quartername=3 and q4.quartername=4
  where next is not null;
+
+/*4... From users who had their first session as a viewer, how many streamer 
+sessions have they had? Return the user id and number of sessions in descending order.
+ In case there are users with the same number of sessions, order them by ascending user id.*/
+ 
+ CREATE TABLE twitch_sessions (user_id BIGINT, session_start DATETIME, session_end DATETIME, 
+ session_id BIGINT PRIMARY KEY, session_type VARCHAR(20) CHECK (session_type IN ('viewer', 'streamer')));
+
+INSERT INTO twitch_sessions (user_id, session_start, session_end, session_id, session_type) 
+VALUES (101, '2024-02-01 10:00:00', '2024-02-01 11:00:00', 1, 'viewer'), 
+(101, '2024-02-02 14:00:00', '2024-02-02 15:30:00', 2, 'streamer'), 
+(102, '2024-02-01 09:30:00', '2024-02-01 10:30:00', 3, 'viewer'), 
+(102, '2024-02-03 16:00:00', '2024-02-03 17:00:00', 4, 'streamer'),
+ (102, '2024-02-05 18:00:00', '2024-02-05 19:30:00', 5, 'streamer'), 
+ (103, '2024-02-02 11:00:00', '2024-02-02 12:00:00', 6, 'viewer'), 
+ (104, '2024-02-01 08:30:00', '2024-02-01 09:00:00', 7, 'viewer'), 
+ (104, '2024-02-04 20:00:00', '2024-02-04 21:00:00', 8, 'streamer'),
+ (104, '2024-02-06 22:00:00', '2024-02-06 23:00:00', 9, 'streamer'),
+ (104, '2024-02-07 15:00:00', '2024-02-07 16:30:00', 10, 'streamer');
+ /* this query gives user id which have session as viwer and streamer*/
+ select  user_id,count(session_type='streamer')  from twitch_sessions t1 where t1.user_id in
+ (select user_id  from twitch_sessions t2 where 
+session_type ='viewer')
+group by user_id;
+ /* we require user_id with first session as viewer and also had streamer session*/
+ with base as (select user_id, session_type,row_number()over(partition by user_id order by
+ session_start) as ranks  from twitch_sessions t2),
+base2 as (select  user_id  from base where ranks=1 and session_type='viewer')
+select t1.user_id, count(*) from twitch_sessions t1 join base2 b on b.user_id=t1.user_id
+where t1.session_type='streamer'
+group by user_id order by count(*) desc;
+
+/* other way*/
+ select  user_id,count(session_type='streamer')  from twitch_sessions t1 where t1.user_id in
+ (select user_id  from twitch_sessions t2 where 
+session_type ='viewer')
+group by user_id;
+ /* we require user_id with first session as viewer and also had streamer session*/
+ with base as (select user_id, min(session_start) from twitch_sessions t2 
+ where session_type='viewer'
+ group by user_id )
+select t1.user_id, count(*) from twitch_sessions t1 join base b on b.user_id=t1.user_id
+where t1.session_type='streamer'
+group by user_id order by count(*) desc;
