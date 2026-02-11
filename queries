@@ -272,3 +272,19 @@ group by  restaurant_id),
 select (f*XYsum-(Xsum*Ysum))/sqrt(((f*Xsqsum)-pow(Xsum,2))*((f*Ysqsum)-pow(Ysum,2))) as
 corr from base2 
 
+/*8.... Given the users' sessions logs on a particular day, 
+calculate how many hours each user was active that day.
+Note: The session starts when state=1 and ends when state=0.*/
+CREATE TABLE cust_tracking (cust_id VARCHAR(50), state BIGINT, timestamp DATETIME);
+
+INSERT INTO cust_tracking (cust_id, state, timestamp) VALUES ('101', 1, '2024-01-10 08:00:00'), 
+('101', 0, '2024-01-10 10:30:00'), ('101', 1, '2024-01-10 14:00:00'), ('101', 0, '2024-01-10 15:45:00'),
+ ('102', 1, '2024-01-10 09:15:00'), ('102', 0, '2024-01-10 12:00:00'), ('103', 1, '2024-01-10 07:00:00'),
+ ('103', 0, '2024-01-10 09:30:00'), ('103', 1, '2024-01-10 13:00:00'), ('103', 0, '2024-01-10 16:00:00');
+ with base as (select cust_id, state, timestamp as currenttime, row_number()over(partition by cust_id order by timestamp),
+ lead(timestamp)over(partition by cust_id order by timestamp) as endtime
+ from cust_tracking )
+ select cust_id,round(sum(timestampdiff(second, currenttime,endtime))/3600,2) as time_spend from base  where 
+ endtime is not null and state =1
+ group by cust_id 
+ 
