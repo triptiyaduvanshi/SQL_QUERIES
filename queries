@@ -483,3 +483,28 @@ INSERT INTO claims (policy_number, state, claim_cost, fraud_score) VALUES ('POL1
  base2 as(select state, fraud_score as mark from base where prec=ceil(0.95*pos))
  select b1.policy_number,b1.state, b1.claim_cost,b1.fraud_score,b2.mark from base b1 join base2 b2 on 
  b1.state= b2.state WHERE b1.fraud_score >= b2.mark;
+
+/*16.... Find the most profitable location. Write a query that calculates the average signup duration and
+ average transaction amount for each location, and then compare these two measures together by taking 
+ the ratio of the average transaction amount and average duration for each location.*/
+ 
+ CREATE TABLE cust_signups (location VARCHAR(100), plan_id BIGINT, signup_id BIGINT PRIMARY KEY, 
+ signup_start_date DATETIME, signup_stop_date DATETIME);
+
+INSERT INTO cust_signups (location, plan_id, signup_id, signup_start_date, signup_stop_date) VALUES 
+ ('New York', 101, 1, '2025-01-01', '2025-01-31'), ('San Francisco', 102, 2, '2025-01-05', '2025-02-05'),
+ ('Los Angeles', 103, 3, '2025-01-10', '2025-01-20'), ('New York', 104, 4, '2025-02-01', '2025-02-28'), 
+ ('Los Angeles', 105, 5, '2025-01-15', '2025-01-25');
+
+CREATE TABLE cust_transactions (amt FLOAT, signup_id BIGINT, transaction_id BIGINT PRIMARY KEY,
+ transaction_start_date DATETIME);
+
+INSERT INTO cust_transactions (amt, signup_id, transaction_id, transaction_start_date) VALUES 
+(100.50, 1, 1001, '2025-01-10'), (200.75, 1, 1002, '2025-01-20'), (150.00, 2, 1003, '2025-01-15'),
+ (300.00, 3, 1004, '2025-01-12'), (400.00, 4, 1005, '2025-02-15'), (250.00, 5, 1006, '2025-01-20');
+ 
+ with base as (select s.location as location,s.signup_id as signup_id, 
+ datediff(s.signup_stop_date,s.signup_start_date) as time_date, t.amt as amount from cust_signups s
+ left join cust_transactions t on s.signup_id=t.signup_id)
+ select location, avg(amount),avg(time_date) , avg(amount)/avg(time_date) as ratio from base group by location order by 
+ avg(amount)/avg(time_date) desc limit 1; 
