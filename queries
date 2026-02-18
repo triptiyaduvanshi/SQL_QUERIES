@@ -608,4 +608,18 @@ INSERT INTO google_word_lists (words1, words2) VALUES ('apple banana cherry', 'd
  where rest is not null and rest <> "")
  select word,count(*) from word 
  where word regexp'[a-z]' group by word order by count(*) desc limit 3;
+
+ /* another way using advance level concept of JASON Tricks*/
+ select * from google_word_lists;
+ with base as (select upper(words1) as contents from google_word_lists
+ union all
+ select upper(words2) as contents from google_word_lists
+ union all 
+ select upper(contents) as contents from google_file_store)
+ select jt1.letter1 ,count(*) from base, 
+ json_table(
+ concat('["',replace(contents,' ','","'),'"]') ,'$[*]'columns(letter1 varchar(100) path '$'))as jt1
+ where contents is not null and contents <>'' group by jt1.letter1 order by count(*) desc;
  
+ /* Note:- jason will work for frq of words, but not for letter for this we need double json , which not 
+ appreciated*/
