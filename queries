@@ -816,3 +816,36 @@ INSERT INTO titles (affected_from, worker_ref_id, worker_title) VALUES  ('2020-0
  select quarter(date),round(sum(sales_amount*exchange_rate),2) from base where quarter(date) in ('1','2') and 
  year(date)='2020' group by quarter(date)
  
+/*24..... In a marathon, gun time is counted from the moment of the formal start of the race while net time is 
+counted from the moment a runner crosses a starting line. Both variables are in seconds.
+
+You are asked to check if the interval between the two times is different for male and female runners.
+ First, calculate the average absolute difference between the gun time and net time. Group the results by 
+ available genders (male and female). Output the absolute difference between those two values.*/
+ 
+ CREATE TABLE marathon_male (age BIGINT, div_tot TEXT, gun_time BIGINT, hometown TEXT, net_time BIGINT,
+ num BIGINT, pace BIGINT, person_name TEXT, place BIGINT);
+
+INSERT INTO marathon_male (age, div_tot, gun_time, hometown, net_time, num, pace, person_name, place)
+ VALUES (25, '1/100', 3600, 'New York', 3400, 101, 500, 'John Doe', 1), (30, '2/100', 4000, 'Boston', 
+ 3850, 102, 550, 'Michael Smith', 2), (22, '3/100', 4200, 'Chicago', 4150, 103, 600, 'David Johnson', 3);
+
+CREATE TABLE marathon_female (age BIGINT, div_tot TEXT, gun_time BIGINT, hometown TEXT, net_time BIGINT,
+ num BIGINT, pace BIGINT, person_name TEXT, place BIGINT);
+
+INSERT INTO marathon_female (age, div_tot, gun_time, hometown, net_time, num, pace, person_name, place)
+ VALUES (28, '1/100', 3650, 'San Francisco', 3600, 201, 510, 'Jane Doe', 1), (26, '2/100', 3900, 
+ 'Los Angeles', 3850, 202, 530, 'Emily Davis', 2), (24, '3/100', 4100, 'Seattle', 4050, 203, 590, 
+ 'Anna Brown', 3);
+ with male as (select sum(gun_time-net_time) as time_female from marathon_female),
+ female as (select sum(gun_time-net_time) as time_male from marathon_male)
+ select time_male-time_female from male cross join female;
+ /* other way*/
+ with base as (select 'male' as gender ,(gun_time-net_time) as times from marathon_male
+				union all
+                select 'Female' as gender ,(gun_time-net_time) as times from marathon_female)
+	select (sum(case
+				when gender ='male' then times else 0 end)-
+                sum(case
+				when gender ='Female' then times else 0 end)) as difference from base
+                
