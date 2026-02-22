@@ -688,3 +688,42 @@ VALUES (1, '2024-01-15 10:30:00', '2024-01-15 11:00:00', 'Region A', 5, '2024-01
  from doordash_delivery
 	group by dayname(customer_placed_order_datetime) ,hour(customer_placed_order_datetime)
     order by weekday, hour;
+
+/* 22.......
+The company you are working for wants to anticipate their staffing needs by identifying their top two
+ busiest times of the week. To find this, each day should be segmented into differents parts using 
+ following criteria:
+Morning: Before 12 p.m. (not inclusive)
+Early afternoon: 12 -15 p.m.
+Late afternoon: after 15 p.m. (not inclusive)
+
+Your output should include the day and time of day combination for the two busiest times, i.e.
+ the combinations with the most orders, along with the number of orders (e.g. top two results could be
+ Friday Late afternoon with 12 orders and Sunday Morning with 10 orders). The company has also requested
+ that the day be displayed in text format (i.e. Monday).*/
+ 
+ CREATE TABLE sales_log (order_id BIGINT PRIMARY KEY,product_id BIGINT,timestamp DATETIME);
+
+INSERT INTO sales_log (order_id, product_id, timestamp) VALUES  (1, 101, '2024-12-15 09:30:00'),
+ (2, 102, '2024-12-15 11:45:00'), (3, 103, '2024-12-15 12:10:00'), (4, 104, '2024-12-15 13:15:00'),
+ (5, 105, '2024-12-15 14:20:00'), (6, 106, '2024-12-15 15:30:00'), (7, 107, '2024-12-15 16:40:00'),
+ (8, 108, '2024-12-16 09:50:00'), (9, 109, '2024-12-16 10:30:00'), (10, 110, '2024-12-16 12:05:00'),
+ (11, 111, '2024-12-16 13:50:00'), (12, 112, '2024-12-16 14:15:00'), (13, 113, '2024-12-16 15:30:00'),
+ (14, 114, '2024-12-17 09:45:00'), (15, 115, '2024-12-17 11:20:00'), (16, 116, '2024-12-17 12:25:00'),
+ (17, 117, '2024-12-17 13:30:00'), (18, 118, '2024-12-17 14:55:00'), (19, 119, '2024-12-17 15:10:00'),
+ (20, 120, '2024-12-18 10:40:00');
+ select * from sales_log;
+ with base as (select dayname(timestamp)as weekday,count(order_id)as count_orders,
+							case
+							when time(timestamp)<='12:00' then 'morning'
+                            when time(timestamp) >'12:00' and time(timestamp) <'15:00' then 'early afternoon'
+                            else 'late afternoon'
+                            end as schedule
+                            from sales_log
+                            group by dayname(timestamp),schedule),
+base2 as(select weekday,schedule,count_orders, rank()over(partition by weekday
+							order by count_orders desc) as ranks
+                            from base)					
+ select weekday,schedule, count_orders from base2 where ranks<=2 
+ order by count_orders desc;
+/* note window function happens after aggregation after group by*/
