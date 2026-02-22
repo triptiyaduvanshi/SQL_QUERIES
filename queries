@@ -849,3 +849,41 @@ INSERT INTO marathon_female (age, div_tot, gun_time, hometown, net_time, num, pa
                 sum(case
 				when gender ='Female' then times else 0 end)) as difference from base
                 
+/* 25.....You are given the table with titles of recipes from a cookbook and their page numbers.
+ You are asked to represent how the recipes will be distributed in the book.
+
+Produce a table consisting of three columns: left_page_number, left_title and right_title.
+ The k-th row (counting from 0), should contain the number and the title of the page with the number 
+ 2×k in the first and second columns respectively, and the title of the page with the number 2×k+1 in
+ the third column.
+Each page contains at most 1 recipe. If the page does not contain a recipe, the appropriate cell should
+ remain empty (NULL value). Page 0 (the internal side of the front cover) is guaranteed to be empty.*/
+ 
+ CREATE TABLE cookbook_titles (page_number INT PRIMARY KEY,title VARCHAR(255));
+INSERT INTO cookbook_titles (page_number, title) VALUES (1, 'Scrambled eggs'), (2, 'Fondue'), 
+(3, 'Sandwich'), (4, 'Tomato soup'), (6, 'Liver'), (11, 'Fried duck'), (12, 'Boiled duck'),
+ (15, 'Baked chicken');
+ with base1 as (select page_number as left_page_number,
+							(case 
+                            when page_number%2=0 then title  end) as left_title
+							from cookbook_titles
+                            where page_number%2=0),
+   base2 as (  select page_number as right_page_number,
+							(case 
+                            when page_number%2<>0 then title  end) as right_title
+							from cookbook_titles 
+                            where page_number%2<>0 )  
+	select left_page_number,left_title, right_title from base1 left join base2  on 
+			left_page_number+1=right_page_number;
+ /*other way*/
+ with base1 as (select page_number as left_page_number,
+							title as left_title
+							from cookbook_titles
+                            where page_number%2=0),
+   base2 as (  select page_number as right_page_number,
+							title as right_title
+							from cookbook_titles 
+                            where page_number%2=1 )  
+	select left_page_number,left_title, right_title from base1 left join base2  on 
+			left_page_number+1=right_page_number
+           
