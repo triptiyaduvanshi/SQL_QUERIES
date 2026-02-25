@@ -1285,3 +1285,27 @@ having sum(case
 	when paying_customer='Yes' then downloads else 0 end)<sum(case 
 	when paying_customer='No' then downloads else 0 end); 
 
+/*37.....Identify users who started a session and placed an order on the same day. For these users,
+ calculate the total number of orders and the total order value for that day. Your output should 
+ include the user, the session date, the total number of orders, and the total order value for that day.*/
+ drop table if exists sessions;
+ CREATE TABLE sessions(session_id INT PRIMARY KEY,user_id INT,session_date DATETIME);
+
+INSERT INTO sessions(session_id, user_id, session_date) VALUES (1, 1, '2024-01-01 00:00:00'),
+(2, 2, '2024-01-02 00:00:00'),(3, 3, '2024-01-05 00:00:00'),(4, 3, '2024-01-05 00:00:00'),
+(5, 4, '2024-01-03 00:00:00'),(6, 4, '2024-01-03 00:00:00'),(7, 5, '2024-01-04 00:00:00'),
+(8, 5, '2024-01-04 00:00:00'),(9, 3, '2024-01-05 00:00:00'),(10, 5, '2024-01-04 00:00:00');
+
+drop table if exists order_summary ;
+CREATE TABLE order_summary (order_id INT PRIMARY KEY,user_id INT,order_value INT,order_date DATETIME);
+
+INSERT INTO order_summary (order_id, user_id, order_value, order_date) VALUES 
+(1, 1, 152, '2024-01-01 00:00:00'),(2, 2, 485, '2024-01-02 00:00:00'),(3, 3, 398, '2024-01-05 00:00:00'),
+(4, 3, 320, '2024-01-05 00:00:00'),(5, 4, 156, '2024-01-03 00:00:00'),(6, 4, 121, '2024-01-03 00:00:00'),
+(7, 5, 238, '2024-01-04 00:00:00'),(8, 5, 70, '2024-01-04 00:00:00'),(9, 3, 152, '2024-01-05 00:00:00'),
+(10, 5, 171, '2024-01-04 00:00:00');
+
+select s.* ,o.* from sessions s join order_summary o on s.user_id=o.user_id;
+select s.user_id,session_date,count(o.order_id),sum(order_value) from sessions s join order_summary o on s.user_id=o.user_id
+where session_date=o.order_date group by s.user_id,session_date order by sum(order_value) ;
+
