@@ -1258,4 +1258,30 @@ select b.department,o.ID, o.salary,o.employee_title,
  join employee_o o
 on b.department=o.department join base2  b2 on b2.department=o.department;
 
+/*36.......Find the total number of downloads for paying and non-paying users by date. Include only records 
+where non-paying customers have more downloads than paying customers. The output should be sorted by
+ earliest date first and contain 3 columns date, non-paying downloads, paying downloads. */
+ 
+ CREATE TABLE ms_user_dimension (user_id INT PRIMARY KEY,acc_id INT);
+INSERT INTO ms_user_dimension (user_id, acc_id) VALUES (1, 101),(2, 102),(3, 103),(4, 104),(5, 105);
+
+CREATE TABLE ms_acc_dimension (acc_id INT PRIMARY KEY,paying_customer VARCHAR(10));
+INSERT INTO ms_acc_dimension (acc_id, paying_customer) VALUES (101, 'Yes'),(102, 'No'),(103, 'Yes'),
+(104, 'No'),(105, 'No');
+
+CREATE TABLE ms_download_facts (date DATETIME,user_id INT,downloads INT);
+INSERT INTO ms_download_facts (date, user_id, downloads) VALUES ('2024-10-01', 1, 10),('2024-10-01', 2, 15),
+('2024-10-02', 1, 8),('2024-10-02', 3, 12),('2024-10-02', 4, 20),('2024-10-03', 2, 25),
+('2024-10-03', 5, 18);
+select d.date,
+sum(case 
+	when paying_customer='Yes' then downloads else 0 end) as 'paying customer',
+sum(case 
+	when paying_customer='No' then downloads else 0 end) as 'Non paying customer'
+from ms_user_dimension u join ms_acc_dimension a
+on a.acc_id=u.acc_id join ms_download_facts d on u.user_id=d.user_id
+group by d.date
+having sum(case 
+	when paying_customer='Yes' then downloads else 0 end)<sum(case 
+	when paying_customer='No' then downloads else 0 end); 
 
