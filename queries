@@ -1309,3 +1309,15 @@ select s.* ,o.* from sessions s join order_summary o on s.user_id=o.user_id;
 select s.user_id,session_date,count(o.order_id),sum(order_value) from sessions s join order_summary o on s.user_id=o.user_id
 where session_date=o.order_date group by s.user_id,session_date order by sum(order_value) ;
 
+
+// to find missing numbers in series//
+
+ select seat_id from seats;
+ with base as (select seat_id, lead(seat_id)over(order by seat_id) as next_seat from seats),
+base2 as(select seat_id+1 as n, next_seat from base where next_seat-seat_id>1
+						union all
+					select n+1,next_seat
+					from base2 
+					where n+1<next_seat)
+			select n as missing_numbers from base2
+
